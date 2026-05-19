@@ -16,8 +16,8 @@ from retrieval.retriever import Retriever
 from retrieval.llm_client import LLMClient, LLMError
 
 
-@st.cache_resource
-def load_components():
+@st.cache_resource(show_spinner=False)
+def load_components(_cache_key: str = "groq-v1"):
     cfg = load_config()
     embedder = Embedder()
     vector_store = VectorStore(persist_directory=cfg.chroma_dir)
@@ -31,7 +31,7 @@ def main():
     st.caption("Ask any question about UMass HR policies and benefits.")
 
     try:
-        retriever, llm_client, vector_store = load_components()
+        retriever, llm_client, vector_store = load_components("groq-v1")
     except ConfigError as e:
         st.error(f"Configuration error: {e}")
         st.stop()
@@ -83,10 +83,10 @@ def main():
                         "citations": web_citations,
                     })
 
-                except LLMError:
-                    st.error("Could not generate an answer. Please check your Gemini API key and try again.")
-                except Exception:
-                    st.error("An unexpected error occurred. Please try again.")
+                except LLMError as e:
+                    st.error(f"Could not generate an answer: {e}")
+                except Exception as e:
+                    st.error(f"An unexpected error occurred: {e}")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ LLMClient: constructs a grounded prompt and calls the Groq API.
 Uses streaming internally and collects the full response.
 """
 import logging
+import re
 from typing import List
 
 from groq import Groq
@@ -44,7 +45,7 @@ class LLMClient:
                 model=self._model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.6,
-                max_completion_tokens=4096,
+                max_completion_tokens=1024,
                 top_p=0.95,
                 stream=True,
                 stop=None,
@@ -54,6 +55,7 @@ class LLMClient:
                 chunk.choices[0].delta.content or ""
                 for chunk in completion
             )
+            answer = re.sub(r"<think>.*?</think>\s*", "", answer, flags=re.DOTALL).strip()
         except Exception as e:
             logger.error("Groq API error: %s", e)
             raise LLMError(f"Groq API call failed: {e}") from e

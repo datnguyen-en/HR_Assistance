@@ -1,0 +1,10 @@
+# One URL per line. Blank lines and lines starting with # are ignored.
+# Run `python ingestion/ingest.py` after editing.
+
+https://www.umass.edu/hr/
+https://www.umass.edu/hr/benefits
+https://www.umass.edu/hr/benefits-and-pay/employee-benefits/askhr
+https://www.umass.edu/hr/benefits-and-pay/payroll/taxes
+https://www.umass.edu/hr/documents/fica-exemption-certificate
+https://www.umass.edu/hr/documents/overview-w-2-statements
+https://www.umass.edu/hr/benefits-and-pay/payroll/pay-process-schedule

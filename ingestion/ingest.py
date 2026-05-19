@@ -4,7 +4,11 @@ Usage: python ingestion/ingest.py
 """
 import logging
 import sys
+import time
 from pathlib import Path
+
+MAX_CHILDREN_PER_SEED = 100
+CHILD_REQUEST_DELAY_SECONDS = 0.3
 
 # Allow imports from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -43,6 +47,7 @@ class IngestionPipeline:
         docs_processed = 0
         failures = []
         discovered_pdfs: dict[str, Path] = {}  # pdf_url → local path, to avoid duplicates
+        visited: set[str] = {u.rstrip("/") for u in cfg.source_urls}
 
         # Scrape web URLs and discover PDFs linked from each page
         for url in cfg.source_urls:
@@ -67,6 +72,38 @@ class IngestionPipeline:
                         pdf_path = scraper.download_pdf(pdf_url)
                         if pdf_path:
                             discovered_pdfs[pdf_url] = pdf_path
+
+                # 1-hop: process child pages under the same path prefix
+                child_urls = scraper.find_internal_links(url, html)[:MAX_CHILDREN_PER_SEED]
+                if child_urls:
+                    logger.info("Found %d child page(s) under %s", len(child_urls), url)
+                for child_url in child_urls:
+                    if child_url in visited:
+                        continue
+                    visited.add(child_url)
+                    time.sleep(CHILD_REQUEST_DELAY_SECONDS)
+                    try:
+                        child_result = scraper.fetch_and_convert(child_url)
+                        if child_result is None:
+                            failures.append(child_url)
+                            continue
+                        c_md, c_meta, c_html = child_result
+                        scraper.save(c_md, c_meta)
+                        c_chunks = chunker.chunk(c_md, c_meta)
+                        all_chunks.extend(c_chunks)
+                        docs_processed += 1
+                        logger.info("Scraped child: %s (%d chunks)", child_url, len(c_chunks))
+                        for pdf_url in scraper.find_pdf_links(child_url, c_html):
+                            if pdf_url not in discovered_pdfs:
+                                pdf_path = scraper.download_pdf(pdf_url)
+                                if pdf_path:
+                                    discovered_pdfs[pdf_url] = pdf_path
+                    except ScraperError as e:
+                        logger.error("Scraper error for child %s: %s", child_url, e)
+                        failures.append(child_url)
+                    except Exception as e:
+                        logger.error("Unexpected error for child %s: %s", child_url, e)
+                        failures.append(child_url)
 
             except ScraperError as e:
                 logger.error("Scraper error for %s: %s", url, e)

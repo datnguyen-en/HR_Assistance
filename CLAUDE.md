@@ -5,19 +5,19 @@ A RAG (Retrieval-Augmented Generation) chatbot that answers questions about UMas
 ## Architecture Overview
 
 ```
-Ingestion Pipeline                  Query Pipeline
-─────────────────                   ──────────────
-Web URLs + PDFs                     User question
-     │                                    │
-  Scraper / PDFProcessor             Embedder (embed query)
-     │                                    │
-  Chunker (700 token chunks)         VectorStore (ChromaDB similarity search)
-     │                                    │
-  Embedder (all-MiniLM-L6-v2)       Retriever (top-k chunks)
-     │                                    │
-  VectorStore (ChromaDB upsert)      LLMClient (Groq API)
-                                          │
-                                     Streamlit UI
+Ingestion Pipeline                  Query Pipeline
+─────────────────                   ──────────────
+Web URLs + PDFs                     User question
+     │                                    │
+  Scraper / PDFProcessor             Embedder (embed query)
+     │                                    │
+  Chunker (700 token chunks)         VectorStore (ChromaDB similarity search)
+     │                                    │
+  Embedder (all-MiniLM-L6-v2)       Retriever (top-k chunks)
+     │                                    │
+  VectorStore (ChromaDB upsert)      LLMClient (Groq API)
+                                          │
+                                     Streamlit UI
 ```
 
 ## Key Files
@@ -39,14 +39,14 @@ Web URLs + PDFs                     User question
 ## Configuration (`.env`)
 
 ```
-GROQ_API_KEY=        # Required — get from console.groq.com
-LLM_MODEL=           # Groq model ID (e.g. llama-3.3-70b-versatile)
-CHUNK_SIZE=700        # Token size per chunk
-OVERLAP_PCT=0.12      # Overlap between chunks
-TOP_K=5               # Chunks retrieved per query
+GROQ_API_KEY=        # Required — get from console.groq.com
+LLM_MODEL=           # Groq model ID (e.g. llama-3.3-70b-versatile)
+CHUNK_SIZE=700        # Token size per chunk
+OVERLAP_PCT=0.12      # Overlap between chunks
+TOP_K=5               # Chunks retrieved per query
 RAW_DATA_DIR=data/raw
 CHROMA_DIR=data/chroma
-SOURCE_URLS=          # Comma-separated UMass HR URLs to scrape
+SOURCE_URLS=          # Comma-separated UMass HR URLs to scrape
 ```
 
 **Never commit `.env` to git** — it contains the live API key.
@@ -67,9 +67,9 @@ streamlit run ui/app.py
 - **Embeddings:** Local `sentence-transformers` — no API call needed
 - **Vector store:** ChromaDB (local, persisted to `data/chroma/`)
 - The model ID must match Groq's naming exactly (no `provider/model` slash format). Check available models at `console.groq.com` or via:
-  ```bash
-  curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY" | python3 -m json.tool | grep '"id"'
-  ```
+  ```bash
+  curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY" | python3 -m json.tool | grep '"id"'
+  ```
 
 ## Data Flow Details
 

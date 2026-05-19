@@ -4,6 +4,7 @@ Call load_config() at startup; raises ConfigError if required params are missing
 """
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 class ConfigError(Exception):
@@ -20,6 +21,23 @@ def _require(key: str) -> str:
 
 def _optional(key: str, default: str) -> str:
     return os.getenv(key, default)
+
+
+def _load_source_urls(path: str) -> list[str]:
+    """Read URLs from a file, one per line. Blank lines and lines starting with # are ignored.
+    Also accepts a comma-separated SOURCE_URLS env var, appended after file contents."""
+    urls: list[str] = []
+    p = Path(path)
+    if p.is_file():
+        for line in p.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                urls.append(line)
+    env_urls = os.getenv("SOURCE_URLS", "")
+    urls.extend(u.strip() for u in env_urls.split(",") if u.strip())
+    # De-duplicate while preserving order
+    seen: set[str] = set()
+    return [u for u in urls if not (u in seen or seen.add(u))]
 
 
 @dataclass
@@ -59,8 +77,7 @@ def load_config() -> Config:
             "Set it in your .env file or environment."
         )
 
-    raw_urls = os.getenv("SOURCE_URLS", "")
-    source_urls = [u.strip() for u in raw_urls.split(",") if u.strip()]
+    source_urls = _load_source_urls(_optional("SOURCES_FILE", "sources.txt"))
 
     return Config(
         llm_model=llm_model,

@@ -1,10 +1,11 @@
 """
-LLMClient: constructs a grounded prompt and calls the Google Gemini API.
+LLMClient: constructs a grounded prompt and calls the Groq API.
+Uses streaming internally and collects the full response.
 """
 import logging
 from typing import List
 
-import google.generativeai as genai
+from groq import Groq
 
 from models import Citation, LLMResponse, RetrievedChunk
 
@@ -29,22 +30,33 @@ class LLMError(Exception):
 
 class LLMClient:
     def __init__(self, model: str, api_key: str):
-        self._model_name = model
-        genai.configure(api_key=api_key)
-        self._model = genai.GenerativeModel(model)
+        self._model = model
+        self._client = Groq(api_key=api_key)
 
     def generate(self, query: str, context_chunks: List[RetrievedChunk]) -> LLMResponse:
         """
-        Build prompt, call Gemini API, return LLMResponse with answer and citations.
+        Build prompt, call Groq API with streaming, return LLMResponse.
         Raises LLMError on API failure.
         """
         prompt = self._build_prompt(query, context_chunks)
         try:
-            response = self._model.generate_content(prompt)
-            answer = response.text
+            completion = self._client.chat.completions.create(
+                model=self._model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.6,
+                max_completion_tokens=4096,
+                top_p=0.95,
+                stream=True,
+                stop=None,
+            )
+            # Collect streamed chunks into a single answer string
+            answer = "".join(
+                chunk.choices[0].delta.content or ""
+                for chunk in completion
+            )
         except Exception as e:
-            logger.error("Gemini API error: %s", e)
-            raise LLMError(f"Gemini API call failed: {e}") from e
+            logger.error("Groq API error: %s", e)
+            raise LLMError(f"Groq API call failed: {e}") from e
 
         citations = []
         seen = set()
@@ -58,6 +70,5 @@ class LLMClient:
         return LLMResponse(answer=answer, citations=citations)
 
     def _build_prompt(self, query: str, chunks: List[RetrievedChunk]) -> str:
-        # Pass chunk text only — no source tags so Gemini doesn't echo filenames
         context = "\n\n".join(chunk.text for chunk in chunks)
         return PROMPT_TEMPLATE.format(context=context, query=query)

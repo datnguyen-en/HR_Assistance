@@ -22,7 +22,7 @@ def load_components():
     embedder = Embedder()
     vector_store = VectorStore(persist_directory=cfg.chroma_dir)
     retriever = Retriever(embedder=embedder, vector_store=vector_store, k=cfg.top_k)
-    llm_client = LLMClient(model=cfg.llm_model, api_key=cfg.gemini_api_key)
+    llm_client = LLMClient(model=cfg.llm_model, api_key=cfg.groq_api_key)
     return retriever, llm_client, vector_store
 
 

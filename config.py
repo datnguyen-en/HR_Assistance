@@ -26,7 +26,7 @@ def _optional(key: str, default: str) -> str:
 class Config:
     # LLM
     llm_model: str
-    gemini_api_key: str
+    groq_api_key: str
 
     # Chunking
     chunk_size: int
@@ -48,14 +48,14 @@ def load_config() -> Config:
         from dotenv import load_dotenv
         load_dotenv()
     except ImportError:
-        pass  # python-dotenv is optional; env vars may already be set
+        pass
 
-    llm_model = _optional("LLM_MODEL", "gemini-1.5-flash")
-    gemini_api_key = os.getenv("GEMINI_API_KEY", "")
+    llm_model = _optional("LLM_MODEL", "qwen/qwen3-32b")
+    groq_api_key = os.getenv("GROQ_API_KEY", "")
 
-    if not gemini_api_key:
+    if not groq_api_key:
         raise ConfigError(
-            "Required configuration parameter 'GEMINI_API_KEY' is missing. "
+            "Required configuration parameter 'GROQ_API_KEY' is missing. "
             "Set it in your .env file or environment."
         )
 
@@ -64,7 +64,7 @@ def load_config() -> Config:
 
     return Config(
         llm_model=llm_model,
-        gemini_api_key=gemini_api_key,
+        groq_api_key=groq_api_key,
         chunk_size=int(_optional("CHUNK_SIZE", "700")),
         overlap_pct=float(_optional("OVERLAP_PCT", "0.12")),
         top_k=int(_optional("TOP_K", "5")),

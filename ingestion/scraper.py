@@ -78,6 +78,41 @@ class Scraper:
                 pdf_urls.add(absolute)
         return list(pdf_urls)
 
+    def find_internal_links(self, seed_url: str, html: str) -> list[str]:
+        """
+        Return absolute http(s) links on the same host as seed_url whose path
+        starts with the seed's directory prefix. Excludes PDFs, mailto:, and
+        the seed URL itself. Fragments stripped; de-duplicated; order preserved.
+        """
+        seed_parsed = urlparse(seed_url)
+        seed_path = seed_parsed.path or "/"
+        prefix = seed_path if seed_path.endswith("/") else seed_path.rsplit("/", 1)[0] + "/"
+        seed_norm = seed_parsed._replace(fragment="").geturl().rstrip("/")
+
+        soup = BeautifulSoup(html, "html.parser")
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for tag in soup.find_all("a", href=True):
+            href = tag["href"].strip()
+            if not href or href.startswith(("mailto:", "tel:", "javascript:")):
+                continue
+            absolute = urljoin(seed_url, href)
+            parsed = urlparse(absolute)
+            if parsed.scheme not in ("http", "https"):
+                continue
+            if parsed.netloc != seed_parsed.netloc:
+                continue
+            if parsed.path.lower().endswith(".pdf"):
+                continue
+            if not parsed.path.startswith(prefix):
+                continue
+            normalized = parsed._replace(fragment="").geturl().rstrip("/")
+            if normalized == seed_norm or normalized in seen:
+                continue
+            seen.add(normalized)
+            ordered.append(normalized)
+        return ordered
+
     def download_pdf(self, pdf_url: str) -> Path | None:
         """
         Download a PDF from a URL and save it to data/raw/.

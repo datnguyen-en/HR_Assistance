@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-MAX_CHILDREN_PER_SEED = 100
+MAX_CHILDREN_PER_SEED = 25
 CHILD_REQUEST_DELAY_SECONDS = 0.3
 
 # Allow imports from project root

@@ -15,7 +15,7 @@ ENCODING = "cl100k_base"
 
 
 class Chunker:
-    def __init__(self, chunk_size: int = 700, overlap_pct: float = 0.12):
+    def __init__(self, chunk_size: int = 300, overlap_pct: float = 0.12):
         self.chunk_size = chunk_size
         self.overlap = math.floor(chunk_size * overlap_pct)
         self._enc = tiktoken.get_encoding(ENCODING)

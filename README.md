@@ -43,29 +43,30 @@ umass-hr-chatbot/
 └── requirements.txt
 ```
 
-## Setup
+## Installation and Usage
 
-### 1. Clone the repo
+### Prerequisites
+
+Before getting started, make sure you have Python 3, Git, and a Google Gemini API key. You can get an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/umass-hr-chatbot.git
 cd umass-hr-chatbot
 ```
 
-### 2. Create and activate a virtual environment
+### 2. Install Dependencies
 
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-```
-
-### 3. Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure environment variables
+### 3. Configure API Key
+
+Create a `.env` file:
 
 ```bash
 cp .env.example .env
@@ -73,30 +74,47 @@ cp .env.example .env
 
 Open `.env` and fill in your values:
 
-```
+```env
 GEMINI_API_KEY=your-gemini-api-key-here
-SOURCE_URLS=https://www.umass.edu/hr/,https://www.umass.edu/hr/benefits
+SOURCE_URLS=https://www.umass.edu/hr/
 ```
 
-Get a free Gemini API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).
+### 4. Run the Project
 
-## Running the Project
-
-### Step 1 — Ingest HR documents
+First, process the HR documents:
 
 ```bash
 python ingestion/ingest.py
 ```
 
-This scrapes the configured URLs, processes any PDFs in `data/raw/`, and builds the vector database. Run this once to get started, and again whenever you want to refresh the data.
-
-### Step 2 — Launch the chatbot
+Then launch the chatbot:
 
 ```bash
 streamlit run ui/app.py
 ```
 
-Opens the chatbot in your browser at `http://localhost:8501`.
+The chatbot will open at `http://localhost:8501`. You can now ask HR-related questions and receive answers with source citations.
+
+## API
+
+The HR RAG chatbot uses the **Google Gemini API** to generate answers based on official UMass HR documentation.
+
+### How It Works
+
+1. The user submits a question through the Streamlit interface.
+2. The system retrieves relevant HR documents from ChromaDB.
+3. The question and retrieved documents are sent to Gemini.
+4. Gemini generates an answer with source citations.
+
+The API is handled in `retrieval/llm_client.py`, while `retrieval/retriever.py` is responsible for document retrieval.
+
+### Example Usage
+
+**Input:** "What benefits are available for UMass employees?"
+
+**Output:** The chatbot generates an answer based on the retrieved HR documents, along with citations to the original sources.
+
+**Note:** The chatbot can only answer based on processed documents, and AI-generated responses may not always be accurate.
 
 ## Adding PDF Documents
 

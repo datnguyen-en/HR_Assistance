@@ -1,4 +1,4 @@
-# HR RAG 
+# HR Assistance 
 
 A Retrieval-Augmented Generation (RAG) chatbot that answers HR-related questions using official UMass HR documentation. Built as a summer intern project.
 

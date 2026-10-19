@@ -7,7 +7,6 @@ An AI Assistance for people who want to find answers to HR questions using offic
 - [Install](#install)
 - [Usage](#usage)
 - [How It Works](#how-it-works)
-- [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Adding PDF Documents](#adding-pdf-documents)
 - [Configuration](#configuration)
@@ -29,11 +28,9 @@ You will need:
 ### 1. Get the project
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/umass-hr-chatbot.git
+git clone https://github.com/datnguyen-en/HR_Assistance
 cd umass-hr-chatbot
 ```
-
-> Replace `YOUR-USERNAME` with the repository owner's actual GitHub username.
 
 ### 2. Install the Python dependencies
 
@@ -125,24 +122,13 @@ python3 ingestion/ingest.py
 streamlit run ui/app.py
 ```
 
-If Gemini authentication fails, check that `GEMINI_API_KEY` in `.env` is set to your real key, then restart the app. **Before submitting:** replace these general troubleshooting descriptions with one actual error message produced by your program and the command that causes it, as the assignment requires.
+If Gemini authentication fails, check that `GEMINI_API_KEY` in `.env` is set to your real key, then restart the app.
 
 ## How It Works
 
-1. **Ingestion:** The system collects HR web pages and PDF documents, converts their content to Markdown, divides the text into chunks, and creates embeddings.
-2. **Retrieval:** When someone asks a question, ChromaDB searches for relevant document chunks using semantic similarity.
-3. **Response:** The retrieved content is sent to Google Gemini to generate an answer grounded in the source documents, with citations where available.
-
-## Tech Stack
-
-| Component | Technology |
-| --- | --- |
-| Web scraping | `requests`, `trafilatura`, `markdownify` |
-| PDF processing | `pymupdf4llm` |
-| Embeddings | `sentence-transformers` (`all-MiniLM-L6-v2`) |
-| Vector database | ChromaDB (local) |
-| Language model | Google Gemini API |
-| User interface | Streamlit |
+1. **Ingestion:** The system collects HR web pages and PDF documents, then converts their content to .MD file, and then it seperates the text into chunks (a bunch of texts - for easier terminology), and creates embeddings (it convert "THAT" bunch of texts to number so that machine could understand).
+2. **Retrieval:** When someone asks a question, ChromaDB searches for relevant document chunks using semantic similarity (like when you are searching something on Google, it shows the results that similar base on your words).
+3. **Response:** The retrieved content is sent to Google Gemini to generate an answer that follows in the source documents, with citations where available.
 
 ## Project Structure
 
@@ -198,7 +184,7 @@ Settings are stored in `.env`.
 
 - The chatbot can only search documents that have already been processed by the ingestion pipeline.
 - If a source page changes, the locally stored content may be outdated until ingestion runs again.
-- AI-generated responses may be inaccurate. Check the original HR documents before making important decisions.
+- AI-generated responses may be inaccurate, so make sure you double check the original HR documents before making important decisions.
 
 ## API
 
@@ -218,20 +204,45 @@ The project uses Python modules to process HR documents, find relevant informati
 
 ### Public Functions and Examples
 
-Use a reference entry in this format, replacing the placeholders with the real implementation:
+The project provides three main functions for processing HR documents, searching for information, and generating AI responses.
 
-```text
-`actual_function_name(parameter_name)`
+**`IngestionPipeline().run()`**
 
-What the function does.
+Collects HR documents from websites and PDFs, breaks them into smaller chunks, and stores them in ChromaDB for searching.
 
-- `parameter_name` (type): What the caller provides.
-- Returns: Return type and meaning.
-- Raises: Actual exceptions and when they occur.
+- **Returns:** `IngestionSummary` with information about the ingestion process.
 
-`LLMClient(model, api_key).generate(query, context_chunks)`
+**`Retriever(embedder, vector_store, k=5).retrieve(query)`**
 
-- Returns an `LLMResponse` (`answer`, `citations`). Raises `LLMError` if the LLM call fails.
+Searches the stored documents and finds the most relevant information based on the user's question.
+
+- `query`: The question you want to search for.
+- `k`: Number of document chunks to retrieve (default: 5).
+- **Returns:** A list of `RetrievedChunk`, or an empty list if no documents are available.
+
+**`LLMClient(model, api_key).generate(query, context_chunks)`**
+
+Sends the user's question and relevant documents to your LLM to generate an AI response.
+
+- `query`: The user's question.
+- `context_chunks`: Relevant documents retrieved from ChromaDB.
+- **Returns:** `LLMResponse` containing the generated answer and source citations.
+- **Raises:** `LLMError` if the API request fails.
+
+### Example Usage
+
+The following example searches for UMass HR information and generates an AI response.
+
+```python
+query = "What is the PTO policy?"
+
+retriever = Retriever(Embedder(), VectorStore("data/chroma"))
+chunks = retriever.retrieve(query)
+
+client = LLMClient("gemini/flash-2.5", "your-key")
+response = client.generate(query, chunks)
+
+print(response.answer)
 ```
 
 

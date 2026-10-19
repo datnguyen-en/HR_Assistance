@@ -1,5 +1,7 @@
 # HR Assistance
 
+![HR Assistance banner: your AI assistant for UMass HR questions](assets/banner.png)
+
 An AI Assistance for people who want to find answers to HR questions using official UMass documentation.
 
 ## Table of Contents

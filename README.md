@@ -216,23 +216,24 @@ The project uses Python modules to process HR documents, find relevant informati
 | `retrieval/retriever.py` | Retrieve relevant document chunks | Function or class used to search the database |
 | `retrieval/llm_client.py` | Generate an answer with Gemini | Public function or class used to generate responses |
 
-### Public Functions and Examples — Complete from Source
+### Public Functions and Examples
 
 Use a reference entry in this format, replacing the placeholders with the real implementation:
 
 ```text
-### `actual_function_name(parameter_name)`
+`actual_function_name(parameter_name)`
 
 What the function does.
 
 - `parameter_name` (type): What the caller provides.
 - Returns: Return type and meaning.
 - Raises: Actual exceptions and when they occur.
+
+`LLMClient(model, api_key).generate(query, context_chunks)`
+
+- Returns an `LLMResponse` (`answer`, `citations`). Raises `LLMError` if the LLM call fails.
 ```
 
-### `LLMClient(model, api_key).generate(query, context_chunks)`
-
-Returns an `LLMResponse` (`answer`, `citations`). Raises `LLMError` if the LLM call fails.
 
 ## Maintainers
 

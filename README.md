@@ -87,7 +87,7 @@ Run the ingestion script to collect and process source documents:
 python3 ingestion/ingest.py
 ```
 
-The pipeline processes configured HR sources and stores searchable document embeddings in the local vector database. Check `data/chroma/` for database files after the script finishes. The exact terminal messages depend on the implementation.
+The system collects and processes HR documents, then saves the information so the chatbot can search for answers later. Once the process is finished, you can check the data/chroma/ folder to see if the files were created successfully.
 
 **2. Start the chatbot**
 

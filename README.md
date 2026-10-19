@@ -242,4 +242,4 @@ Returns an `LLMResponse` (`answer`, `citations`). Raises `LLMError` if the LLM c
 
 - [UMass Human Resources](https://www.umass.edu/hr/) — HR documentation used as a source of information.
 - [Google AI Studio](https://aistudio.google.com/) — Gemini API documentation and key setup.
-- Adi and Adhya — Peer review feedback for my README :D, 
+- Adi and Adhya — Peer review feedback for my README :D.

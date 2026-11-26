@@ -1,6 +1,6 @@
-# HR Assistance
-
 ![HR Assistance banner: your AI assistant for UMass HR questions](assets/banner.png)
+
+# HR Assistance
 
 An AI-powered chatbot that helps users find answers to HR questions using official UMass documentation.
 

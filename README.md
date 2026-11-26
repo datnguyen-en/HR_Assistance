@@ -2,7 +2,7 @@
 
 ![HR Assistance banner: your AI assistant for UMass HR questions](assets/banner.png)
 
-An AI Assistance for people who want to find answers to HR questions using official UMass documentation.
+An AI-powered chatbot that helps users find answers to HR questions using official UMass documentation.
 
 ## Table of Contents
 
@@ -25,13 +25,13 @@ You will need:
 
 - Python 3 and `pip` (`python3 --version` and `python3 -m pip --version` to check)
 - Git (`git --version` to check)
-- A Google Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- A Groq API key from [Groq AI Studio](https://groq.com/)
 
 ### 1. Get the project
 
 ```bash
-git clone https://github.com/datnguyen-en/HR_Assistance
-cd umass-hr-chatbot
+git clone https://github.com/datnguyen-en/HR_Assistance.git
+cd HR_Assistance
 ```
 
 ### 2. Install the Python dependencies
@@ -75,29 +75,57 @@ Expected output if those imports succeed:
 Dependencies installed
 ```
 
-This checks the Python environment; it does **not** confirm that Gemini credentials or HR document ingestion are working.
+This checks the Python environment; it does **not** confirm that Groq credentials or HR document ingestion are working.
 
 ## Usage
 
 ### CLI
 
+Before proceeding, make sure you are in the project root
+directory (`HR_Assistance/`) and your virtual environment
+is activated.
+
 **1. Process the HR documents**
 
-Run the ingestion script to collect and process source documents:
+In your terminal, run the ingestion script to collect and process source documents:
 
 ```bash
 python3 ingestion/ingest.py
 ```
 
-The system collects and processes HR documents, then saves the information so the chatbot can search for answers later. Once the process is finished, you can check the data/chroma/ folder to see if the files were created successfully.
+Example output:
+
+```text
+INFO Processed PDF: test.pdf (12 chunks)
+INFO Embedding 356 chunks...
+Batches: 100% | 12/12
+INFO Ingestion complete: 80 documents processed, 356 chunks stored, 1 failures.
+```
+
+The output displays the number of documents processed,
+text chunks stored, and any failures encountered during
+ingestion.
+
+If individual sources fail, the system continues processing
+the remaining documents. Review the warning messages
+to identify any failed sources.
+
+The actual output may vary depending on the source
+documents.
+
+Once ingestion is complete, check the `data/chroma/`
+directory to verify that the local vector database
+has been created.
 
 **2. Start the chatbot**
+
+After ingestion finishes, run the following command in the same terminal:
 
 ```bash
 streamlit run ui/app.py
 ```
 
-Streamlit normally displays a local URL similar to:
+You can now view your Streamlit app in your browser:
 
 ```text
 Local URL: http://localhost:8501
@@ -115,6 +143,11 @@ What benefits are available for UMass employees?
 
 The chatbot searches the ingested documents and generates an answer using the relevant information. When available, it also includes source citations so you can review the original HR documentation. The exact response depends on the documents in the database.
 
+![HR Assistant demonstrating a response with source citations](assets/chatbot-demo.png)
+
+*Figure 1. The HR Assistant answering an employee's question
+using UMass HR documentation.*
+
 **4. If something goes wrong**
 
 If the app cannot answer questions because the vector database is empty, run the ingestion script before starting the chatbot:
@@ -124,18 +157,29 @@ python3 ingestion/ingest.py
 streamlit run ui/app.py
 ```
 
-If Gemini authentication fails, check that `GEMINI_API_KEY` in `.env` is set to your real key, then restart the app.
+If Groq authentication fails, check that GROQ_API_KEY in .env contains a valid API key, then restart the app.
 
 ## How It Works
 
-1. **Ingestion:** The system collects HR web pages and PDF documents, then converts their content to .MD file, and then it seperates the text into chunks (a bunch of texts - for easier terminology), and creates embeddings (it convert "THAT" bunch of texts to number so that machine could understand).
-2. **Retrieval:** When someone asks a question, ChromaDB searches for relevant document chunks using semantic similarity (like when you are searching something on Google, it shows the results that similar base on your words).
-3. **Response:** The retrieved content is sent to Google Gemini to generate an answer that follows in the source documents, with citations where available.
+1. **Ingestion:** The system collects HR web pages and PDF
+   documents, converts them into Markdown, and divides the
+   content into smaller sections called chunks. These chunks
+   are then converted into numerical representations called
+   embeddings.
+
+2. **Retrieval:** When a user asks a question, ChromaDB
+   searches for the most relevant document chunks based on
+   their meaning, rather than relying only on exact keywords.
+
+3. **Response:** The retrieved content is sent to an LLM
+   through the Groq API to generate an answer based on the
+   source documents. Relevant sources are also provided so
+   users can review the original HR documentation.
 
 ## Project Structure
 
 ```text
-umass-hr-chatbot/
+HR_Assistance/
 ├── ingestion/
 │   ├── ingest.py          # Runs the ingestion pipeline
 │   ├── scraper.py         # Collects HR web pages
@@ -145,12 +189,16 @@ umass-hr-chatbot/
 │   └── vector_store.py    # Stores data in ChromaDB
 ├── retrieval/
 │   ├── retriever.py       # Finds relevant documents
-│   └── llm_client.py      # Communicates with Gemini
+│   └── llm_client.py      # Communicates with Groq
 ├── ui/
 │   └── app.py             # Streamlit chatbot interface
 ├── data/
 │   ├── raw/               # Source documents
 │   └── chroma/            # Local vector database
+├── assets/
+│   ├── banner.png
+│   └── chatbot-demo.png
+├── sources.txt            # HR source URLs
 ├── config.py              # Reads configuration
 ├── models.py              # Shared data models
 ├── .env.example           # Environment variable template
@@ -166,20 +214,24 @@ Place HR PDF files in `data/raw/` before running the ingestion pipeline:
 python3 ingestion/ingest.py
 ```
 
+
 ## Configuration
 
-Settings are stored in `.env`.
+Settings are stored in `.env`. The source URLs are listed in
+`sources.txt` by default.
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | Required | Google Gemini API key |
-| `LLM_MODEL` | `gemini-1.5-flash` | Gemini model name |
-| `SOURCE_URLS` | Required | Comma-separated HR URLs |
+| `GROQ_API_KEY` | Required | Groq API key |
+| `LLM_MODEL` | `openai/gpt-oss-120b` | Groq model name |
+| `SOURCES_FILE` | `sources.txt` | File containing HR source URLs |
+| `SOURCE_URLS` | Optional | Additional comma-separated HR URLs |
 | `CHUNK_SIZE` | `700` | Tokens per text chunk |
-| `OVERLAP_PCT` | `0.12` | Overlap between chunks |
-| `TOP_K` | `5` | Number of retrieved chunks |
-| `RAW_DATA_DIR` | `data/raw` | Folder for source files |
+| `OVERLAP_PCT` | `0.12` | Fraction of overlap between chunks |
+| `TOP_K` | `5` | Maximum number of retrieved chunks |
+| `RAW_DATA_DIR` | `data/raw` | Folder for source documents |
 | `CHROMA_DIR` | `data/chroma` | Local vector database folder |
+
 
 
 ## Known Limitations
@@ -194,15 +246,15 @@ The project uses Python modules to process HR documents, find relevant informati
 
 ### Python Module Reference
 
-| Module | Purpose | Public API to document |
+| Module | Purpose | Public API |
 | --- | --- | --- |
-| `ingestion/scraper.py` | Collect HR website content | Function that accepts source URLs and returns collected content |
-| `ingestion/pdf_processor.py` | Read HR PDF content | Function that accepts a PDF path and returns processed text |
-| `ingestion/chunker.py` | Divide documents into text chunks | Function that accepts text and chunk settings and returns chunks |
-| `ingestion/embedder.py` | Convert text to embeddings | Function that accepts text chunks and returns embeddings |
-| `ingestion/vector_store.py` | Store and query embeddings | Public storage and search methods |
-| `retrieval/retriever.py` | Retrieve relevant document chunks | Function or class used to search the database |
-| `retrieval/llm_client.py` | Generate an answer with Gemini | Public function or class used to generate responses |
+| `ingestion/scraper.py` | Collect HR website content | `Scraper.fetch_and_convert(url)` |
+| `ingestion/pdf_processor.py` | Read HR PDF content | `PDFProcessor.process(pdf_path)` |
+| `ingestion/chunker.py` | Divide documents into text chunks | `Chunker.chunk(text, metadata)` |
+| `ingestion/embedder.py` | Convert text to embeddings | `Embedder.embed(text)` |
+| `ingestion/vector_store.py` | Store and search embeddings | `VectorStore.upsert(chunks, embeddings)`, `VectorStore.query(query_embedding, k)` |
+| `retrieval/retriever.py` | Retrieve relevant documents | `Retriever.retrieve(query)` |
+| `retrieval/llm_client.py` | Generate an AI response | `LLMClient.generate(query, context_chunks)` |
 
 ### Public Functions and Examples
 
@@ -231,21 +283,56 @@ Sends the user's question and relevant documents to your LLM to generate an AI r
 - **Returns:** `LLMResponse` containing the generated answer and source citations.
 - **Raises:** `LLMError` if the API request fails.
 
+
 ### Example Usage
 
-The following example searches for UMass HR information and generates an AI response.
+The following example demonstrates how developers can
+retrieve HR information and generate an AI response
+using the project's Python API.
+
+Before running this example, complete the installation
+and ingestion steps. Run the Python code from the
+project root directory.
 
 ```python
+from config import load_config
+from ingestion.embedder import Embedder
+from ingestion.vector_store import VectorStore
+from retrieval.retriever import Retriever
+from retrieval.llm_client import LLMClient
+
+config = load_config()
+
 query = "What is the PTO policy?"
 
-retriever = Retriever(Embedder(), VectorStore("data/chroma"))
+retriever = Retriever(
+    Embedder(),
+    VectorStore(config.chroma_dir),
+    k=config.top_k
+)
+
 chunks = retriever.retrieve(query)
 
-client = LLMClient("gemini/flash-2.5", "your-key")
-response = client.generate(query, chunks)
+if chunks:
+    client = LLMClient(
+        config.llm_model,
+        config.groq_api_key
+    )
 
-print(response.answer)
+    response = client.generate(query, chunks)
+    print(response.answer)
+
+    print("\nSources:")
+    for citation in response.citations:
+        print(citation.source)
+else:
+    print("No documents found. Run ingestion first.")
 ```
+
+The example retrieves relevant HR documents, generates
+an answer, and prints the associated sources. If no
+documents are available, it reminds the developer to
+run the ingestion pipeline first.
 
 
 ## Maintainers
@@ -255,5 +342,6 @@ print(response.answer)
 ## Credits
 
 - [UMass Human Resources](https://www.umass.edu/hr/) — HR documentation used as a source of information.
-- [Google AI Studio](https://aistudio.google.com/) — Gemini API documentation and key setup.
-- Adi and Adhya — Peer review feedback for my README :D.
+- [Groq AI Studio](https://groq.com/) — Groq API documentation and key setup.
+- Adi and Adhya — Peer review and feedback for my README :D.
+- Prof. Meï and TA Zoe Moccia — For their valuable feedback and guidance throughout the process of learning how to write clear, effective, and maintainable README documentation.
